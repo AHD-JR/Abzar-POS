@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/static/css/main.48a7a709.css",
+    "main.js": "/static/js/main.d9778bb7.js",
+    "static/media/MaterialCommunityIcons.ttf": "/static/media/MaterialCommunityIcons.7e8c4430463e4a7bae68.ttf",
+    "static/media/FontAwesome.ttf": "/static/media/FontAwesome.1e59d2330b4c6deb84b3.ttf",
+    "static/media/MaterialIcons.ttf": "/static/media/MaterialIcons.5e7382c63da0098d634a.ttf",
+    "static/media/Ionicons.ttf": "/static/media/Ionicons.fef568f64dd5a32ab65b.ttf",
+    "static/media/AntDesign.ttf": "/static/media/AntDesign.163adab9dbd7cb1ed12a.ttf",
+    "static/media/Entypo.ttf": "/static/media/Entypo.a10f41248184205e8db8.ttf",
+    "static/media/Feather.ttf": "/static/media/Feather.9c7ce8de9fcc01aa8957.ttf",
+    "static/media/Foundation.ttf": "/static/media/Foundation.c0cbb004854f9c746f89.ttf",
+    "static/media/SimpleLineIcons.ttf": "/static/media/SimpleLineIcons.3ec13a24af3fdda11107.ttf",
+    "static/media/Octicons.ttf": "/static/media/Octicons.8ba1c974aec1caff7bb6.ttf",
+    "static/media/Zocial.ttf": "/static/media/Zocial.5e415922d259313f2a42.ttf",
+    "static/media/EvilIcons.ttf": "/static/media/EvilIcons.699664b33ac2837d5bee.ttf",
+    "index.html": "/index.html",
+    "main.48a7a709.css.map": "/static/css/main.48a7a709.css.map",
+    "main.d9778bb7.js.map": "/static/js/main.d9778bb7.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.48a7a709.css",
+    "static/js/main.d9778bb7.js"
+  ]
+}
