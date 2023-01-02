@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node App.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "client": "cd ../chippz-republic-frontend && npm start",
+    "client": "cd ../Abzar-Frontend && npm start",
     "dev": "concurrently \"npm run start\" \"npm run client\""
   },
   "keywords": [],

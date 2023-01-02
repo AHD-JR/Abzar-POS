@@ -1,0 +1,1 @@
+cd Abzar-Backend && npm run dev
