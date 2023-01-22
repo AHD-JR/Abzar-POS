@@ -304,174 +304,121 @@ const group_by = (items, key) => items.reduce(
     {},
   );
 
+  const getSummaryWithDateRange = async (startDate, endDate) => {
+      const D = new Date().toLocaleString('en-US', {timeZone: 'Africa/Lagos'})
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      start.setHours(0,0,0,0)
+      end.setHours(23,59,59,999)
+      const startISO = start.toISOString()
+      const endISO = end.toISOString()
+  
+      const [
+          allStaff,
+          getAllOrders,
+          getAllReservations,
+          getTotalDebtPaidToday,
+          getAllDiscountsToday,
+      ] = await Promise.all([
+          User.aggregate([{$project: {_id: 1, username: 1, firstName: 1, lastName: 1}}]),
+          Order.find({createdAt: {$gt: startISO, $lt: endISO}, $or: [{orderType: "Instant-Order"}, {orderType: "Shipment"}],  revoked: false}),
+          Order.find({orderType: "Reservation", reservationFulfilled: true, reservationFulfilledOn: {$gt: startISO, $lt: endISO}}),
+          Order.find({paidOn: {$gt: startISO, $lt: endISO}, orderType: "Debt", revoked: false}),
+          Order.find({
+              $or: [{
+                  $or: [{orderType: "Instant-Order"}, {orderType: "Shipment"}],
+                  discount: {$gt: 0},
+                  createdAt: {$gt: startISO, $lt: endISO},
+                  revoked: false,
+              },
+              {
+                  orderType: "Debt",
+                  paidOn: {$gt: startISO, $lt: endISO},
+                  paidTotal: {$gt: 0},
+                  discount: {$gt: 0},
+                  revoked: false,
+              }]
+          })        
+      ])
+      
+      const groupedOrders = group_by(getAllOrders, 'createdBy')
+      const groupedReservations = group_by(getAllReservations, 'createdBy')
+      const groupedOrdersArray = Object.keys(groupedOrders).map(key => {
+          const host = allStaff.find(staff => staff._id.toString() === key) || {firstName: "Unknown", lastName: "Unknown", username: "Unknown"}
+          const items = groupedOrders[key].map(order => order.items.map(item => ({name: item.item.name, qtySold: item.qty, price: item.item.price, totalSale: item.qty * item.item.price })))
+          return {host: host, items: items.flat()}
+      })
+      const groupedReservationsArray = Object.keys(groupedReservations).map(key => {
+          const host = allStaff.find(staff => staff._id.toString() === key) || {firstName: "Unknown", lastName: "Unknown", username: "Unknown"}
+          const items = groupedReservations[key].map(order => order.items.map(item => ({name: item.item.name, qtySold: item.qty, price: item.item.price, totalSale: item.qty * item.item.price })))
+          return {host: host, items: items.flat(),}
+      }) 
+      const groupedOrdersArrayWithDuplicates = groupedOrdersArray.map(host => {
+          const items = host.items.reduce((acc, item) => {
+              const existingItem = acc.find(i => i.name === item.name)
+              if (existingItem) {
+                  existingItem.qtySold += item.qtySold
+                  existingItem.totalSale += item.totalSale
+              } else {
+                  acc.push(item)
+              }
+              return acc
+          }, [])
+          return {host: host.host, 
+              items: items, 
+              totalSale: items.reduce((acc, item) => acc + item.totalSale, 0)}
+      })
+      const groupedReservationsArrayWithDuplicates = groupedReservationsArray.map(host => {
+          const items = host.items.reduce((acc, item) => {
+              const existingItem = acc.find(i => i.name === item.name)
+              if (existingItem) {
+                  existingItem.qtySold += item.qtySold
+                  existingItem.totalSale += item.totalSale
+              } else {
+                  acc.push(item)
+              }
+              return acc
+          }, [])
+          return {host: host.host, items: items, totalSale: items.reduce((acc, item) => acc + item.totalSale, 0)}
+      })
+  
+      return ({
+          orders: groupedOrdersArrayWithDuplicates, 
+          reservations: groupedReservationsArrayWithDuplicates,
+          totalDebtPaidToday: getTotalDebtPaidToday.reduce((acc, order) => acc + order.paidTotal, 0),
+          discounts: getAllDiscountsToday.reduce((acc, order) => acc + order.discount, 0),
+          sales: {
+              pos: getAllOrders.filter(order => order.payType === "POS" && order.orderType !== "Debt").reduce((acc, order) => {
+                  return acc + order.items.reduce((acc, item) => acc + item.qty * item.item.price, 0)
+              }, 0),
+              cash: getAllOrders.filter(order => order.payType === "Cash" && order.orderType !== "Debt").reduce((acc, order) => {
+                  return acc + order.items.reduce((acc, item) => acc + item.qty * item.item.price, 0)
+              }
+              , 0),
+              transfer: getAllOrders.filter(order => order.payType === "Transfer" && order.orderType !== "Debt").reduce((acc, order) => {
+                  return acc + order.items.reduce((acc, item) => acc + item.qty * item.item.price, 0)
+              }
+              , 0),
+          },
+      })
+  }
+
 module.exports.get_summary_date_to_date = async(req, res) => {
     const {startDate, endDate} = req.body
-
-    const fromDate = new Date(startDate).toLocaleString('en-US', {timeZone: 'Africa/Lagos'})
-    const toDate = new Date(endDate).toLocaleString('en-US', {timeZone: 'Africa/Lagos'})
-
-    
-    const fromDateDate = new Date(fromDate)
-    const toDateDate = new Date(toDate)
-
-    fromDateDate.setHours(0,0,0,0)
-    toDateDate.setHours(23,59,59,999)
-
-    const fromDateISO = fromDateDate.toISOString()
-    const toDateISO = toDateDate.toISOString()
-    
-    const [
-        allStaff,
-        getAllOrders,
-        getAllReservations,
-        getTotalDebtPaidToday,
-        getAllDiscountsToday
-    ] = await Promise.all([
-        User.aggregate([{$project: {_id: 1, username: 1, firstName: 1, lastName: 1}}]),
-        Order.find({createdAt: {$gt: fromDateISO, $lt: toDateISO}, $or: [{orderType: "Instant-Order"}, {orderType: "Shipment"}],  revoked: false}),
-        Order.find({orderType: "Reservation", reservationFulfilled: true, reservationFulfilledOn: {$gt: fromDateISO, $lt: toDateISO}}),
-        Order.find({paidOn: {$gt: fromDateISO, $lt: toDateISO}, orderType: "Debt", revoked: false}),
-        Order.find({
-            $or: [{
-                $or: [{orderType: "Instant-Order"}, {orderType: "Shipment"}],
-                discount: {$gt: 0},
-                createdAt: {$gt: fromDateISO, $lt: toDateISO},
-                revoked: false,
-            },
-            {
-                orderType: "Debt",
-                paidOn: {$gt: fromDateISO, $lt: toDateISO},
-                paidTotal: {$gt: 0},
-                discount: {$gt: 0},
-                revoked: false,
-            }]
-        })
-    ])
-    
-    const groupedOrders = group_by(getAllOrders, 'createdBy')
-    const groupedReservations = group_by(getAllReservations, 'createdBy')
-    const groupedOrdersArray = Object.keys(groupedOrders).map(key => {
-        const host = allStaff.find(staff => staff._id.toString() === key) || {firstName: "Unknown", lastName: "Unknown", username: "Unknown"}
-        const items = groupedOrders[key].map(order => order.items.map(item => ({name: item.item.name, qtySold: item.qty, price: item.item.price, totalSale: item.qty * item.item.price })))
-        return {host: host, items: items.flat()}
-    })
-    const groupedReservationsArray = Object.keys(groupedReservations).map(key => {
-        const host = allStaff.find(staff => staff._id.toString() === key) || {firstName: "Unknown", lastName: "Unknown", username: "Unknown"}
-        const items = groupedReservations[key].map(order => order.items.map(item => ({name: item.item.name, qtySold: item.qty, price: item.item.price, totalSale: item.qty * item.item.price})))
-        return {host: host, items: items.flat(),}
-    }) 
-    const groupedOrdersArrayWithDuplicates = groupedOrdersArray.map(host => {
-        const items = host.items.reduce((acc, item) => {
-            const existingItem = acc.find(i => i.name === item.name)
-            if (existingItem) {
-                existingItem.qtySold += item.qtySold
-                existingItem.totalSale += item.totalSale
-            } else {
-                acc.push(item)
-            }
-            return acc
-        }, [])
-        return {host: host.host, items: items, totalSale: items.reduce((acc, item) => acc + item.totalSale, 0)}
-    })
-    const groupedReservationsArrayWithDuplicates = groupedReservationsArray.map(host => {
-        const items = host.items.reduce((acc, item) => {
-            const existingItem = acc.find(i => i.name === item.name)
-            if (existingItem) {
-                existingItem.qtySold += item.qtySold
-                existingItem.totalSale += item.totalSale
-            } else {
-                acc.push(item)
-            }
-            return acc
-        }, [])
-        return {host: host.host, items: items, totalSale: items.reduce((acc, item) => acc + item.totalSale, 0)}
-    })
-    return res.json({
-        orders: groupedOrdersArrayWithDuplicates, 
-        reservations: groupedReservationsArrayWithDuplicates,
-        totalDebtPaidToday: getTotalDebtPaidToday.reduce((acc, order) => acc + order.paidTotal, 0),
-        discounts: getAllDiscountsToday.reduce((acc, order) => acc + order.discount, 0)
-    })
+    try {
+        return res.json(await getSummaryWithDateRange(startDate, endDate))
+    } catch (error) {
+        return res.status(500).json({error: "Internal server error"})
+    }
 }
 
 module.exports.get_summary_today = async(req, res) => {
-    const D = new Date().toLocaleString('en-US', {timeZone: 'Africa/Lagos'})
-    const today = new Date(D)
-    today.setHours(0, 0, 0, 0)
-    const todayISO = today.toISOString()
-
-    const [
-        allStaff,
-        getAllOrders,
-        getAllReservations,
-        getTotalDebtPaidToday,
-        getAllDiscountsToday
-    ] = await Promise.all([
-        User.aggregate([{$project: {_id: 1, username: 1, firstName: 1, lastName: 1}}]),
-        Order.find({createdAt: {$gt: todayISO}, $or: [{orderType: "Instant-Order"}, {orderType: "Shipment"}],  revoked: false}),
-        Order.find({orderType: "Reservation", reservationFulfilled: true, reservationFulfilledOn: {$gt: todayISO}}),
-        Order.find({paidOn: {$gt: todayISO}, orderType: "Debt", revoked: false}),
-        Order.find({
-            $or: [{
-                $or: [{orderType: "Instant-Order"}, {orderType: "Shipment"}],
-                discount: {$gt: 0},
-                createdAt: {$gt: todayISO},
-                revoked: false,
-            },
-            {
-                orderType: "Debt",
-                paidOn: {$gt: todayISO},
-                paidTotal: {$gt: 0},
-                discount: {$gt: 0},
-                revoked: false,
-            }]
-        })
-    ])
-    
-    const groupedOrders = group_by(getAllOrders, 'createdBy')
-    const groupedReservations = group_by(getAllReservations, 'createdBy')
-    const groupedOrdersArray = Object.keys(groupedOrders).map(key => {
-        const host = allStaff.find(staff => staff._id.toString() === key) || {firstName: "Unknown", lastName: "Unknown", username: "Unknown"}
-        const items = groupedOrders[key].map(order => order.items.map(item => ({name: item.item.name, qtySold: item.qty, price: item.item.price, totalSale: item.qty * item.item.price })))
-        return {host: host, items: items.flat()}
-    })
-    const groupedReservationsArray = Object.keys(groupedReservations).map(key => {
-        const host = allStaff.find(staff => staff._id.toString() === key) || {firstName: "Unknown", lastName: "Unknown", username: "Unknown"}
-        const items = groupedReservations[key].map(order => order.items.map(item => ({name: item.item.name, qtySold: item.qty, price: item.item.price, totalSale: item.qty * item.item.price })))
-        return {host: host, items: items.flat(),}
-    }) 
-    const groupedOrdersArrayWithDuplicates = groupedOrdersArray.map(host => {
-        const items = host.items.reduce((acc, item) => {
-            const existingItem = acc.find(i => i.name === item.name)
-            if (existingItem) {
-                existingItem.qtySold += item.qtySold
-                existingItem.totalSale += item.totalSale
-            } else {
-                acc.push(item)
-            }
-            return acc
-        }, [])
-        return {host: host.host, items: items, totalSale: items.reduce((acc, item) => acc + item.totalSale, 0)}
-    })
-    const groupedReservationsArrayWithDuplicates = groupedReservationsArray.map(host => {
-        const items = host.items.reduce((acc, item) => {
-            const existingItem = acc.find(i => i.name === item.name)
-            if (existingItem) {
-                existingItem.qtySold += item.qtySold
-                existingItem.totalSale += item.totalSale
-            } else {
-                acc.push(item)
-            }
-            return acc
-        }, [])
-        return {host: host.host, items: items, totalSale: items.reduce((acc, item) => acc + item.totalSale, 0)}
-    })
-    return res.json({
-        orders: groupedOrdersArrayWithDuplicates, 
-        reservations: groupedReservationsArrayWithDuplicates,
-        totalDebtPaidToday: getTotalDebtPaidToday.reduce((acc, order) => acc + order.paidTotal, 0),
-        discounts: getAllDiscountsToday.reduce((acc, order) => acc + order.discount, 0)
-    })
+    const today = new Date()
+    try {
+        return res.json(await getSummaryWithDateRange(today, today))
+    } catch (error) {
+        return res.status(500).json({error: "Internal server error"})
+    }
 }
 
 

@@ -56,7 +56,7 @@ const OrderSchema = new mongoose.Schema({
     },
     payType: {
         type: String,
-        enum: ["Cash", "POS", "Transfer", ""],
+        enum: ["Cash", "POS", "Transfer"],
     },
     paidTotal: {
         type: Number,
