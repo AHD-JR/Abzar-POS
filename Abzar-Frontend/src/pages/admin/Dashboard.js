@@ -6,6 +6,7 @@ import printJS from 'print-js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSpinner, } from '@fortawesome/free-solid-svg-icons'
 import {v4 as uuid} from 'uuid'
+import Summary from '../../components/Summary';
 
 const Dashboard = () => {
     const dispatch = useDispatch()
@@ -33,11 +34,15 @@ const Dashboard = () => {
         setError('')
         printJS({
         documentTitle: `Sales summary from ${new Date(startDate).toDateString()} to ${new Date(endDate).toDateString()}`,
-        printable: 'datesummary', 
+        printable: 'bydate-summary', 
         css: ["https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css", "font-size: 10px"], 
         type: 'html', 
         scanStyles: true})
     }
+
+    useEffect(() => {
+      console.log(startDate, endDate)
+    }, [startDate, endDate])
 
     return (
       <div className="w-screen h-screen text-sm flex bg-[#f1f1f1]">
@@ -50,7 +55,7 @@ const Dashboard = () => {
             <button
               onClick={() =>
                 printJS({
-                  printable: "dailysummary",
+                  printable: "daily-summary",
                   css: [
                     "https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css",
                     "font-size: 10px",
@@ -115,327 +120,10 @@ const Dashboard = () => {
             </button>
           </div>
           <div className="hidden px-4 py-2 h-[calc(100%-500px)]">
-            {summary && summary.reservations && (
-              <div id="dailysummary" className="block overflow-scroll">
-                <div className=" pb-6">
-                  <img src="/logo.png" alt="" className="mx-auto w-24" />
-                  <h1 className="text-xl font-semibold text-center">
-                    Daily Summary for {new Date().toDateString()} @
-                    {new Date().toTimeString().slice(0, 5)}
-                  </h1>
-                </div>
-                <h1 className="text-xl font-bold py-4 text-center border uppercase">
-                  Orders & Shipments
-                </h1>
-                {summary.orders &&
-                  summary.orders.map((host) => (
-                    <div key={uuid()}>
-                      <h1 className="text-xl font-semibold py-4 text-center capitalize border">
-                        {host.host.firstName + " " + host.host.lastName} (
-                        {host.host.username})
-                      </h1>
-                      <table className="border w-full text-left font-mono">
-                        <thead className="border-b">
-                          <tr className="border-b">
-                            <th className="px-4 py-2">SN</th>
-                            <th className="w-full px-4 py-2">Item</th>
-                            <th className="px-4">Qty</th>
-                            <th className="px-4 py-2">Price</th>
-                            <th className="px-4 py-2">Sale</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {host &&
-                            host.items.map((product) => (
-                              <tr className="border-b" key={uuid()}>
-                                <td className="px-4 py-1">
-                                  {host.items.indexOf(product) + 1}
-                                </td>
-                                <td className="px-4 w-full py-1">
-                                  {product.name}
-                                </td>
-                                <td className="px-4 py-1">{product.qtySold}</td>
-                                <td className="px-4 py-1">₦{product.price}</td>
-                                <td className="px-4 py-1">
-                                  ₦{product.totalSale}
-                                </td>
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
-                      <div className="px-4 border flex justify-between">
-                        <h4 className="text-xl font-semibold">Host Sale:</h4>
-                        <h4 className="text-xl font-semibold">
-                          ₦{host.totalSale}
-                        </h4>
-                      </div>
-                    </div>
-                  ))}
-                <div className="px-4 border flex justify-between">
-                  <h4 className="text-xl font-bold">Total Sales</h4>
-                  <h4 className="text-xl font-bold">
-                    ₦
-                    {summary.orders &&
-                      summary.orders.reduce((acc, curr) => {
-                        return acc + curr.totalSale;
-                      }, 0)}
-                  </h4>
-                </div>
-                {summary.reservations && summary.reservations.length > 0 && (
-                  <>
-                    <h1 className="text-xl font-bold py-4 text-center border uppercase">
-                      Reservations Fulfilled
-                    </h1>
-                    {summary.reservations.map((host) => (
-                      <div key={uuid()}>
-                        <h1 className="text-xl font-semibold py-4 text-center capitalize border">
-                          {host.host.firstName + " " + host.host.lastName} (
-                          {host.host.username})
-                        </h1>
-                        <table className="border w-full text-left font-mono">
-                          <thead className="border-b">
-                            <tr className="border-b">
-                              <th className="px-4 py-2">SN</th>
-                              <th className="w-full px-4 py-2">Item</th>
-                              <th className="px-4">Qty</th>
-                              <th className="px-4 py-2">Price</th>
-                              <th className="px-4 py-2">Sale</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {host &&
-                              host.items.map((product) => (
-                                <tr className="border-b" key={uuid()}>
-                                  <td className="px-4 py-1">
-                                    {host.items.indexOf(product) + 1}
-                                  </td>
-                                  <td className="px-4 w-full py-1">
-                                    {product.name}
-                                  </td>
-                                  <td className="px-4 py-1">
-                                    {product.qtySold}
-                                  </td>
-                                  <td className="px-4 py-1">
-                                    ₦{product.price}
-                                  </td>
-                                  <td className="px-4 py-1">
-                                    ₦{product.totalSale}
-                                  </td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                        <div className="px-4 border flex justify-between">
-                          <h4 className="text-xl font-semibold">Host Sale:</h4>
-                          <h4 className="text-xl font-semibold">
-                            ₦{host.totalSale}
-                          </h4>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="px-4 border flex justify-between">
-                      <h4 className="text-xl font-bold">
-                        Total Fulfilled Reservations
-                      </h4>
-                      <h4 className="text-xl font-bold">
-                        ₦
-                        {summary.reservations &&
-                          summary.reservations.reduce((acc, curr) => {
-                            return acc + curr.totalSale;
-                          }, 0)}
-                      </h4>
-                    </div>
-                  </>
-                )}
-
-                <div className="px-4 border flex justify-between">
-                  <h4 className="text-xl font-semibold">Debt Paid Today:</h4>
-                  <h4 className="text-xl font-semibold">
-                    ₦{summary.totalDebtPaidToday}
-                  </h4>
-                </div>
-                <div className="px-4 border flex justify-between">
-                  <h4 className="text-xl font-semibold">Total Discounts:</h4>
-                  <h4 className="text-xl font-semibold">
-                    ₦{summary.discounts}
-                  </h4>
-                </div>
-                <div className="px-4 border flex justify-between">
-                  <h4 className="text-xl font-black">Overral Total Sales </h4>
-                  <h4 className="text-xl font-black">
-                    ₦
-                    {(summary.reservations
-                      ? summary.reservations.reduce((acc, curr) => {
-                          return acc + curr.totalSale;
-                        }, 0)
-                      : 0) +
-                      (summary.orders
-                        ? summary.orders.reduce((acc, curr) => {
-                            return acc + curr.totalSale;
-                          }, 0)
-                        : 0) +
-                      (summary.totalDebtPaidToday || 0) -
-                      summary.discounts}
-                  </h4>
-                </div>
-              </div>
-            )}
+            <Summary summary={summary}  type={"daily"} />
           </div>
           <div className="hidden px-4 py-2 h-[calc(100%-500px)]">
-            {summaryByDate && summaryByDate.reservations && (
-              <div id="datesummary" className="block overflow-scroll">
-                <div className=" pb-6">
-                  <img src="/logo.png" alt="" className="mx-auto w-24" />
-                  <h1 className="text-xl font-semibold text-center">
-                    Summary from {new Date(startDate).toDateString()} to{" "}
-                    {new Date(endDate).toDateString()}
-                  </h1>
-                </div>
-                <h1 className="text-xl font-bold py-4 text-center border uppercase">
-                  Orders & Shipments
-                </h1>
-                {summaryByDate.orders &&
-                  summaryByDate.orders.map((host) => (
-                    <div key={uuid()}>
-                      <h1 className="text-xl font-semibold py-4 capitalize text-center border">
-                        {!host.host
-                          ? "Old Staffs"
-                          : host.host.firstName + " " + host.host.lastName}{" "}
-                        ({!host.host ? "old user" : host.host.username})
-                      </h1>
-                      <table className="border w-full text-left font-mono">
-                        <thead className="border-b">
-                          <tr className="border-b">
-                            <th className="px-4 py-2">SN</th>
-                            <th className="w-full px-4 py-2">Item</th>
-                            <th className="px-4">Qty</th>
-                            <th className="px-4 py-2">Price</th>
-                            <th className="px-4 py-2">Sale</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {host &&
-                            host.items.map((product) => (
-                              <tr className="border-b" key={uuid()}>
-                                <td className="px-4 py-1">
-                                  {host.items.indexOf(product) + 1}
-                                </td>
-                                <td className="px-4 w-full py-1">
-                                  {product.name}
-                                </td>
-                                <td className="px-4 py-1">{product.qtySold}</td>
-                                <td className="px-4 py-1">₦{product.price}</td>
-                                <td className="px-4 py-1">
-                                  ₦{product.totalSale}
-                                </td>
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
-                      <div className="px-4 border flex justify-between">
-                        <h4 className="text-xl font-semibold">Host Sale:</h4>
-                        <h4 className="text-xl font-semibold">
-                          ₦{host.totalSale}
-                        </h4>
-                      </div>
-                    </div>
-                  ))}
-                <div className="px-4 border flex justify-between">
-                  <h4 className="text-xl font-bold">Total Sales</h4>
-                  <h4 className="text-xl font-bold">
-                    ₦
-                    {summaryByDate.orders &&
-                      summaryByDate.orders.reduce((acc, curr) => {
-                        return acc + curr.totalSale;
-                      }, 0)}
-                  </h4>
-                </div>
-                <h1 className="text-xl font-bold py-4 text-center border uppercase">
-                  Reservations Fulfilled
-                </h1>
-                {summaryByDate.reservations &&
-                  summaryByDate.reservations.map((host) => (
-                    <div key={uuid()}>
-                      <h1 className="text-xl font-semibold py-4 capitalize text-center border">
-                        {host.host === undefined
-                          ? "Old Staffs"
-                          : host.host.firstName + " " + host.host.lastName}{" "}
-                        (
-                        {host.host === undefined
-                          ? "old user"
-                          : host.host.username}
-                        )
-                      </h1>
-
-                      {/* <h1 className='text-xl font-semibold py-4 text-center border'>{host.host.firstName +" "+ host.host.lastName} ({host.host.username})</h1> */}
-                      <table className="border w-full text-left font-mono">
-                        <thead className="border-b">
-                          <tr className="border-b">
-                            <th className="px-4 py-2">SN</th>
-                            <th className="w-full px-4 py-2">Item</th>
-                            <th className="px-4">Qty</th>
-                            <th className="px-4 py-2">Price</th>
-                            <th className="px-4 py-2">Sale</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {host &&
-                            host.items.map((product) => (
-                              <tr className="border-b" key={uuid()}>
-                                <td className="px-4 py-1">
-                                  {host.items.indexOf(product) + 1}
-                                </td>
-                                <td className="px-4 w-full py-1">
-                                  {product.name}
-                                </td>
-                                <td className="px-4 py-1">{product.qtySold}</td>
-                                <td className="px-4 py-1">₦{product.price}</td>
-                                <td className="px-4 py-1">
-                                  ₦{product.totalSale}
-                                </td>
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
-                      <div className="px-4 border flex justify-between">
-                        <h4 className="text-xl font-semibold">Host Sale:</h4>
-                        <h4 className="text-xl font-semibold">
-                          ₦{host.totalSale}
-                        </h4>
-                      </div>
-                    </div>
-                  ))}
-                <div className="px-4 border flex justify-between">
-                  <h4 className="text-xl font-bold">
-                    Total Fulfilled Reservations
-                  </h4>
-                  <h4 className="text-xl font-bold">
-                    ₦
-                    {summaryByDate.reservations &&
-                      summaryByDate.reservations.reduce((acc, curr) => {
-                        return acc + curr.totalSale;
-                      }, 0)}
-                  </h4>
-                </div>
-                <div className="px-4 border flex justify-between">
-                  <h4 className="text-xl font-black">Overral Total Sales </h4>
-                  <h4 className="text-xl font-black">
-                    ₦
-                    {(summaryByDate.reservations
-                      ? summaryByDate.reservations.reduce((acc, curr) => {
-                          return acc + curr.totalSale;
-                        }, 0)
-                      : 0) +
-                      (summaryByDate.orders
-                        ? summaryByDate.orders.reduce((acc, curr) => {
-                            return acc + curr.totalSale;
-                          }, 0)
-                        : 0) -
-                      summary.discounts}
-                  </h4>
-                </div>
-              </div>
-            )}
+            <Summary summary={summaryByDate} type={"bydate"} startDate={startDate} endDate={endDate} />
           </div>
         </div>
       </div>
