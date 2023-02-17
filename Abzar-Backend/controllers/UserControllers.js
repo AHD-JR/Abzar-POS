@@ -156,7 +156,7 @@ module.exports.create_order = async(req, res) => {
         const savedOrder = await newOrder.save();
         return res.json(savedOrder)
     } catch (error) {
-        return res.status(500).json({error: "Internal server error"})
+        return res.status(500).json({msg: "Internal server error", error})
     }
 }
 

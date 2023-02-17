@@ -9,6 +9,8 @@ import { PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import axios from '../../utils/axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import printJS from 'print-js';
+
 
 const Discounts = () => {
     const dispatch = useDispatch()
@@ -438,123 +440,140 @@ const Discounts = () => {
             setShow={setViewPurchase}
             title="Purchase Details"
           >
-            <div className="flex flex-col space-y-4 w-full h-[85vh]">
-              <div className="flex flex-col space-y-2">
-                <label htmlFor="supplier" className="text-sm font-semibold">
-                  Supplier
-                </label>
-                <input
-                  type="text"
-                  name="supplier"
-                  id="supplier"
-                  className="border border-gray-300 rounded-md px-4 py-2"
-                  value={purchase.supplier}
-                  disabled
-                />
-              </div>
-              <div className="flex justify-between gap-2">
+            <div className="flex flex-col space-y-4 w-[700px]">
+              <div id="printpurchase">
                 <div className="flex flex-col space-y-2">
-                  <label htmlFor="paid" className="text-sm font-semibold">
-                    Total
+                  <label htmlFor="supplier" className="text-sm font-semibold">
+                    Supplier
                   </label>
-                  <div className="flex border border-gray-300  bg-gray-50 rounded-md px-4 py-2">
-                    <span>₦ </span>
-                    <input
-                      type="text"
-                      name="paid"
-                      id="paid"
-                      className="w-full bg-gray-50 focus:outline-none"
-                      value={addCommaToNumber(purchase.total)}
-                      disabled
-                    />
+                  <input
+                    type="text"
+                    name="supplier"
+                    id="supplier"
+                    className="border border-gray-300 rounded-md px-4 py-2"
+                    value={purchase.supplier}
+                    disabled
+                  />
+                </div>
+                <div className="flex justify-between gap-2">
+                  <div className="flex flex-col space-y-2">
+                    <label htmlFor="paid" className="text-sm font-semibold">
+                      Total
+                    </label>
+                    <div className="flex border border-gray-300  bg-gray-50 rounded-md px-4 py-2">
+                      <span>₦ </span>
+                      <input
+                        type="text"
+                        name="paid"
+                        id="paid"
+                        className="w-full bg-gray-50 focus:outline-none"
+                        value={addCommaToNumber(purchase.total)}
+                        disabled
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <label htmlFor="paid" className="text-sm font-semibold">
+                      Amount Paid
+                    </label>
+                    <div
+                      className={`flex border border-gray-300  bg-gray-50 rounded-md px-4 py-2
+                          ${
+                            purchase.totalPaid < purchase.total
+                              ? "text-red-500"
+                              : "text-green-500"
+                          }`}
+                    >
+                      <span>₦</span>
+                      <input
+                        type="text"
+                        name="paid"
+                        id="paid"
+                        className="w-full bg-gray-50 focus:outline-none"
+                        value={addCommaToNumber(purchase.totalPaid)}
+                        onChange={(e) => {
+                          setPurchase({
+                            ...purchase,
+                            totalPaid: e.target.value,
+                          });
+                        }}
+                        disabled
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <label htmlFor="date" className="text-sm font-semibold">
+                      Date
+                    </label>
+                    <span
+                      type="date"
+                      name="date"
+                      id="date"
+                      className="border bg-gray-50 border-gray-300 rounded-md px-4 py-2"
+                    >
+                      {moment(purchase.createdAt).format("D MMM, YYYY")}{" "}
+                    </span>
                   </div>
                 </div>
-                <div className="flex flex-col space-y-2">
-                  <label htmlFor="paid" className="text-sm font-semibold">
-                    Amount Paid
+                <div className="flex flex-col flex-1 space-y-2">
+                  <label htmlFor="items" className="text-sm font-semibold">
+                    Items
                   </label>
-                  <div
-                    className={`flex border border-gray-300  bg-gray-50 rounded-md px-4 py-2
-                        ${
-                          purchase.totalPaid < purchase.total
-                            ? "text-red-500"
-                            : "text-green-500"
-                        }`}
-                  >
-                    <span>₦</span>
-                    <input
-                      type="text"
-                      name="paid"
-                      id="paid"
-                      className="w-full bg-gray-50 focus:outline-none"
-                      value={addCommaToNumber(purchase.totalPaid)}
-                      onChange={(e) => {
-                        setPurchase({
-                          ...purchase,
-                          totalPaid: e.target.value,
-                        });
-                      }}
-                      disabled
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col space-y-2">
-                  <label htmlFor="date" className="text-sm font-semibold">
-                    Date
-                  </label>
-                  <span
-                    type="date"
-                    name="date"
-                    id="date"
-                    className="border bg-gray-50 border-gray-300 rounded-md px-4 py-2"
-                  >
-                    {moment(purchase.createdAt).format("D MMM, YYYY")}{" "}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-col space-y-2">
-                <label htmlFor="items" className="text-sm font-semibold">
-                  Items
-                </label>
-                <div className="flex flex-col space-y h-full overflow-y-scroll">
-                  <table className="min-w-full border-collapse block md:table">
-                    <thead className="block md:table-header-group">
-                      <tr>
-                        <th className="bg-gray-100 p-2 text-[#333] font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                          Item
-                        </th>
-                        <th className="bg-gray-100 p-2 text-[#333] font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                          Unit Price
-                        </th>
-                        <th className="bg-gray-100 p-2 text-[#333] font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                          Qty
-                        </th>
-                        <th className="bg-gray-100 p-2 text-[#333] font-bold md:border md:border-grey-500 text-left block md:table-cell">
-                          Total Price
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                    {purchase.items.map((item, index) => (
-                        <tr key={"purchase-item-"+index} className="bg-gray-50 border border-grey-500 md:border-none block md:table-row">
-                          <td className="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                            {item.name}
-                          </td>
-                          <td className="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                            ₦{addCommaToNumber(item.price)}
-                          </td>
-                          <td className="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                            {item.qty}
-                          </td>
-                          <td className="p-2 md:border md:border-grey-500 text-left block md:table-cell">
-                            ₦{addCommaToNumber(item.price * item.qty)}
-                          </td>
+                  <div className="flex flex-col space-y h-full">
+                    <table className="min-w-full border-collapse block md:table">
+                      <thead className="block md:table-header-group">
+                        <tr>
+                          <th className="bg-gray-100 p-2 text-[#333] font-bold md:border md:border-grey-500 text-left block md:table-cell">
+                            Item
+                          </th>
+                          <th className="bg-gray-100 p-2 text-[#333] font-bold md:border md:border-grey-500 text-left block md:table-cell">
+                            Unit Price
+                          </th>
+                          <th className="bg-gray-100 p-2 text-[#333] font-bold md:border md:border-grey-500 text-left block md:table-cell">
+                            Qty
+                          </th>
+                          <th className="bg-gray-100 p-2 text-[#333] font-bold md:border md:border-grey-500 text-left block md:table-cell">
+                            Total Price
+                          </th>
                         </tr>
-                    ))}
+                      </thead>
+                      <tbody>
+                      {purchase.items.map((item, index) => (
+                          <tr key={"purchase-item-"+index} className="bg-gray-50 border border-grey-500 md:border-none block md:table-row">
+                            <td className="p-2 md:border md:border-grey-500 text-left block md:table-cell">
+                              {item.name}
+                            </td>
+                            <td className="p-2 md:border md:border-grey-500 text-left block md:table-cell">
+                              ₦{addCommaToNumber(item.price)}
+                            </td>
+                            <td className="p-2 md:border md:border-grey-500 text-left block md:table-cell">
+                              {item.qty}
+                            </td>
+                            <td className="p-2 md:border md:border-grey-500 text-left block md:table-cell">
+                              ₦{addCommaToNumber(item.price * item.qty)}
+                            </td>
+                          </tr>
+                      ))}
 
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
+              </div>
+              <div className="">
+                <button 
+                onClick={() =>
+                  printJS({
+                    printable: "printpurchase",
+                    css: [
+                      "https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css",
+                      "font-size: 10px",
+                    ],
+                    type: "html",
+                    scanStyles: true,
+                  })
+                }
+                className="px-4 py-2 rounded-lg text-white bg-green-500 print:opacity-0 print:invisible">Print</button>
               </div>
             </div>
           </ModalComponent>
